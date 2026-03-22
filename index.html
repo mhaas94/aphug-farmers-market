@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harvest Market Challenge — APHUG — Agriculture</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════
+   ROOT TOKENS — shared + per-phase overrides
+══════════════════════════════════════════════════════ */
+:root {
+  /* shared */
+  --cream: #f5f0e8;
+  --brown: #3d2b1f;
+  --shadow: rgba(61,43,31,0.18);
+  --green-bonus: #2d5a27;
+  --red-penalty: #8b1a1a;
+
+  /* Part 1 — morning / learning (soft sage greens) */
+  --p1-bg:       #e8f0e2;
+  --p1-parchment:#ddebd4;
+  --p1-accent:   #4a7a40;
+  --p1-accent2:  #8db87a;
+  --p1-gold:     #7cad5a;
+  --p1-header:   #2e4f28;
+  --p1-card:     #f2f7ee;
+  --p1-tag-bg:   rgba(74,122,64,0.13);
+  --p1-tag-fg:   #3a6232;
+  --p1-progress: linear-gradient(90deg,#6aaa52,#a8d48a);
+
+  /* Part 2 — afternoon / market (warm terracotta + deep burgundy) */
+  --p2-bg:       #f2e8df;
+  --p2-parchment:#ede0d4;
+  --p2-accent:   #b5451b;
+  --p2-accent2:  #d4855a;
+  --p2-gold:     #c8932a;
+  --p2-header:   #3d1f0f;
+  --p2-card:     #faf3ec;
+  --p2-tag-bg:   rgba(181,69,27,0.10);
+  --p2-tag-fg:   #8b3010;
+  --p2-progress: linear-gradient(90deg,#c8932a,#e8c070);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:'Libre Baskerville',Georgia,serif;
+  color:var(--brown);
+  min-height:100vh;
+  transition:background 0.6s ease;
+}
+body.phase-1{
+  background-color:#dde8d4;
+  background-image:
+    linear-gradient(180deg,#c8dfc0 0%,#d8e8cc 18%,#e0eedc 35%,#e8f4e4 52%,#dde8d4 68%,#ccdac4 82%,#bcceb8 100%),
+    repeating-linear-gradient(90deg,transparent 0px,transparent 58px,rgba(90,122,82,0.04) 58px,rgba(90,122,82,0.04) 60px);
+  background-blend-mode:normal,multiply;
+}
+body.phase-2{
+  background-color:#ede0d0;
+  background-image:
+    linear-gradient(180deg,#d8c8b0 0%,#e4d4b8 20%,#eee0c8 38%,#f2e8d4 55%,#ede0c8 70%,#e0ceb0 84%,#d0bc98 100%),
+    repeating-linear-gradient(135deg,transparent 0px,transparent 18px,rgba(181,69,27,0.025) 18px,rgba(181,69,27,0.025) 20px);
+  background-blend-mode:normal,multiply;
+}
+
+/* ── HEADER ── */
+header{
+  padding:14px 26px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 4px 16px var(--shadow);
+  position:relative;overflow:hidden;
+  transition:background 0.6s ease;
+}
+body.phase-1 header{background:var(--p1-header);}
+body.phase-2 header{background:var(--p2-header);}
+header::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(255,255,255,0.03) 8px,rgba(255,255,255,0.03) 9px);
+}
+.header-left{position:relative;z-index:1;}
+.header-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(1.1rem,3vw,1.7rem);
+  font-weight:900;letter-spacing:0.02em;line-height:1.1;
+  transition:color 0.4s;
+}
+body.phase-1 .header-title{color:#c8e6a8;}
+body.phase-2 .header-title{color:#f0c87a;}
+.header-sub{
+  font-family:'DM Mono',monospace;font-size:0.68rem;
+  color:rgba(245,240,232,0.55);margin-top:2px;
+  letter-spacing:0.08em;text-transform:uppercase;
+}
+.phase-badge{
+  font-family:'DM Mono',monospace;font-size:0.7rem;
+  text-transform:uppercase;letter-spacing:0.1em;
+  padding:4px 12px;border-radius:20px;
+  position:relative;z-index:1;
+  transition:background 0.4s,color 0.4s;
+}
+body.phase-1 .phase-badge{background:rgba(124,173,90,0.3);color:#c8e6a8;}
+body.phase-2 .phase-badge{background:rgba(200,147,42,0.3);color:#f0c87a;}
+
+/* ── SCREENS ── */
+.screen{display:none;max-width:720px;margin:36px auto;padding:0 18px;}
+.screen.active{display:block;}
+#part2-screen,#end-screen{max-width:1100px;}
+
+/* ── CARDS (setup, transition, end) ── */
+.info-card{
+  border-radius:16px;padding:34px 38px;
+  box-shadow:0 8px 40px var(--shadow);
+  margin-bottom:20px;
+  transition:background 0.4s,border-color 0.4s;
+}
+body.phase-1 .info-card{background:var(--p1-card);border:2px solid rgba(74,122,64,0.25);}
+body.phase-2 .info-card{background:var(--p2-card);border:2px solid rgba(200,147,42,0.25);}
+
+.info-card h2{font-family:'Playfair Display',serif;font-size:1.75rem;margin-bottom:8px;}
+.info-card p{font-size:0.9rem;line-height:1.7;color:#5a4a3a;margin-bottom:18px;}
+
+.rules-box{
+  border-left:4px solid;border-radius:0 8px 8px 0;
+  padding:13px 17px;margin-bottom:22px;
+}
+body.phase-1 .rules-box{background:rgba(74,122,64,0.09);border-color:var(--p1-accent);}
+body.phase-2 .rules-box{background:rgba(181,69,27,0.07);border-color:var(--p2-accent);}
+.rules-box h3{font-family:'DM Mono',monospace;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;}
+body.phase-1 .rules-box h3{color:var(--p1-accent);}
+body.phase-2 .rules-box h3{color:var(--p2-accent);}
+.rules-box li{font-size:0.84rem;line-height:1.65;color:#4a3a2a;padding:2px 0;list-style:none;}
+.rules-box li::before{content:'→ ';}
+
+/* ── BUTTONS ── */
+.btn-main{
+  display:block;width:100%;padding:13px;
+  color:white;font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;
+  border:none;border-radius:10px;cursor:pointer;
+  transition:filter 0.2s,transform 0.1s;letter-spacing:0.03em;
+}
+.btn-main:hover{filter:brightness(1.12);transform:translateY(-1px);}
+body.phase-1 .btn-main{background:var(--p1-accent);}
+body.phase-2 .btn-main{background:var(--p2-accent);}
+.btn-secondary{
+  display:inline-block;padding:10px 26px;
+  color:white;font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;
+  border:none;border-radius:9px;cursor:pointer;
+  transition:filter 0.2s;
+}
+.btn-secondary:hover{filter:brightness(1.12);}
+body.phase-1 .btn-secondary{background:var(--p1-accent);}
+body.phase-2 .btn-secondary{background:var(--p2-accent);}
+
+/* ── WALLET BAR ── */
+.wallet-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  border-radius:12px;padding:12px 20px;margin-bottom:12px;
+  box-shadow:0 3px 14px var(--shadow);flex-wrap:wrap;gap:8px;
+  transition:background 0.4s;
+}
+body.phase-1 .wallet-bar{background:var(--p1-card);}
+body.phase-2 .wallet-bar{background:var(--p2-card);}
+.wallet-label{font-family:'DM Mono',monospace;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;color:rgba(61,43,31,0.5);}
+.wallet-amount{font-family:'DM Mono',monospace;font-size:1.7rem;font-weight:500;transition:color 0.3s;}
+body.phase-1 .wallet-amount{color:var(--p1-accent);}
+body.phase-2 .wallet-amount{color:var(--p2-accent);}
+.wallet-amount.flash-up{color:var(--green-bonus) !important;}
+.wallet-amount.flash-down{color:var(--red-penalty) !important;}
+.wallet-stats{font-family:'DM Mono',monospace;font-size:0.68rem;color:rgba(61,43,31,0.45);text-align:right;}
+
+/* ── PROGRESS BAR ── */
+.progress-bar-wrap{height:5px;background:rgba(61,43,31,0.1);border-radius:3px;margin-bottom:14px;overflow:hidden;}
+.progress-bar-fill{height:100%;border-radius:3px;transition:width 0.4s ease;}
+body.phase-1 .progress-bar-fill{background:var(--p1-progress);}
+body.phase-2 .progress-bar-fill{background:var(--p2-progress);}
+
+/* ── SECTION TITLE ── */
+.section-title{
+  font-family:'DM Mono',monospace;font-size:0.74rem;text-transform:uppercase;
+  letter-spacing:0.12em;opacity:0.5;margin-bottom:10px;padding-left:4px;
+}
+
+/* ── STALL GRID ── */
+.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:11px;margin-bottom:20px;}
+
+.stall{
+  border-radius:12px;padding:15px 12px;cursor:pointer;
+  border:2px solid rgba(61,43,31,0.09);
+  transition:all 0.2s;text-align:center;
+  box-shadow:0 2px 8px var(--shadow);position:relative;overflow:hidden;
+}
+body.phase-1 .stall{background:var(--p1-card);}
+body.phase-2 .stall{background:var(--p2-card);}
+.stall:hover:not(.done):not(.locked){
+  transform:translateY(-3px);
+  box-shadow:0 8px 20px rgba(0,0,0,0.12);
+}
+body.phase-1 .stall:hover:not(.done):not(.locked){border-color:var(--p1-accent);}
+body.phase-2 .stall:hover:not(.done):not(.locked){border-color:var(--p2-gold);}
+.stall.done{opacity:0.38;cursor:default;filter:grayscale(0.4);}
+.stall.locked{opacity:0.55;cursor:not-allowed;}
+
+.stall-emoji{font-size:1.9rem;margin-bottom:5px;display:block;}
+.stall-name{font-family:'Playfair Display',serif;font-size:0.88rem;font-weight:700;line-height:1.2;margin-bottom:4px;}
+.stall-value{font-family:'DM Mono',monospace;font-size:0.78rem;font-weight:500;}
+body.phase-1 .stall-value{color:var(--p1-accent);}
+body.phase-2 .stall-value{color:var(--p2-accent);}
+.stall-tag{
+  display:inline-block;margin-top:5px;
+  font-family:'DM Mono',monospace;font-size:0.58rem;text-transform:uppercase;
+  letter-spacing:0.07em;padding:2px 7px;border-radius:10px;
+}
+body.phase-1 .stall-tag{background:var(--p1-tag-bg);color:var(--p1-tag-fg);}
+body.phase-2 .stall-tag{background:var(--p2-tag-bg);color:var(--p2-tag-fg);}
+.stall-cost{
+  font-family:'DM Mono',monospace;font-size:0.68rem;
+  color:var(--red-penalty);margin-top:2px;
+}
+.stall-afford-note{font-size:0.62rem;color:var(--red-penalty);margin-top:3px;font-style:italic;}
+
+/* ── MODAL ── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  z-index:100;align-items:flex-start;justify-content:center;
+  padding:14px;overflow-y:auto;
+  background-size:cover;background-position:center;
+}
+.modal-overlay::before{
+  content:'';position:fixed;inset:0;
+  background:rgba(8,4,0,0.50);
+  backdrop-filter:blur(1.5px);
+  pointer-events:none;z-index:0;
+}
+.modal-overlay.visible{
+  display:flex;
+  background-image:var(--scene-bg, linear-gradient(180deg,#1a1a2a,#3a3a4a));
+}
+.modal{
+  border-radius:16px;max-width:530px;width:100%;
+  padding:24px 26px;margin:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,0.55);
+  animation:mpop 0.22s cubic-bezier(0.34,1.5,0.64,1);
+  position:relative;z-index:1;
+}
+body.phase-1 .modal{background:rgba(242,247,238,0.97);}
+body.phase-2 .modal{background:rgba(250,243,236,0.97);}
+@keyframes mpop{from{transform:scale(0.87);opacity:0}to{transform:scale(1);opacity:1}}
+
+.modal-phase-tag{
+  font-family:'DM Mono',monospace;font-size:0.65rem;text-transform:uppercase;
+  letter-spacing:0.12em;margin-bottom:6px;
+}
+body.phase-1 .modal-phase-tag{color:var(--p1-accent);}
+body.phase-2 .modal-phase-tag.purchase{color:var(--p2-accent);}
+body.phase-2 .modal-phase-tag.consequence{color:var(--red-penalty);}
+
+.modal-emoji{font-size:1.8rem;display:block;text-align:center;margin-bottom:8px;}
+.modal h3{font-family:'Playfair Display',serif;font-size:1.15rem;margin-bottom:4px;line-height:1.2;}
+.modal-desc{font-size:0.82rem;color:#5a4a3a;line-height:1.55;margin-bottom:12px;}
+
+/* concept card (part 1) */
+.concept-card{
+  border-radius:10px;padding:14px 16px;margin-bottom:12px;
+  border-left:4px solid;
+}
+body.phase-1 .concept-card{background:rgba(74,122,64,0.09);border-color:var(--p1-accent);}
+.concept-card .concept-label{font-family:'DM Mono',monospace;font-size:0.64rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:5px;color:var(--p1-accent);}
+.concept-card p{font-size:0.85rem;line-height:1.6;color:var(--brown);}
+
+/* cost/profit banner (part 2) */
+.wager-banner{
+  border-radius:10px;padding:12px 16px;text-align:center;margin-bottom:12px;
+}
+.wager-banner.cost{background:linear-gradient(135deg,#5a1a0a,#8b3a1a);color:white;}
+.wager-banner.consequence{background:linear-gradient(135deg,#8b1a1a,#b5451b);color:white;}
+.wager-banner .wager-amount{font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:500;}
+.wager-banner p{font-size:0.8rem;opacity:0.85;margin-top:3px;}
+
+/* question */
+.question-box{
+  border-left:4px solid;border-radius:0 9px 9px 0;
+  padding:11px 14px;margin-bottom:11px;
+}
+body.phase-1 .question-box{background:white;border-color:var(--p1-accent2);}
+body.phase-2 .question-box{background:white;border-color:var(--p2-gold);}
+.question-box p{font-size:0.84rem;line-height:1.55;font-style:italic;}
+
+/* answers */
+.answer-options{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;}
+.answer-btn{
+  padding:9px 13px;border:2px solid rgba(61,43,31,0.14);border-radius:8px;
+  background:white;font-family:'Libre Baskerville',serif;font-size:0.81rem;
+  cursor:pointer;text-align:left;transition:all 0.16s;color:var(--brown);line-height:1.4;
+}
+.answer-btn:hover:not(:disabled){border-color:var(--p2-gold);background:rgba(200,147,42,0.06);}
+body.phase-1 .answer-btn:hover:not(:disabled){border-color:var(--p1-accent2);background:rgba(74,122,64,0.07);}
+.answer-btn.correct{background:rgba(45,90,39,0.11);border-color:var(--green-bonus);color:var(--green-bonus);font-weight:700;}
+.answer-btn.wrong{background:rgba(139,26,26,0.07);border-color:var(--red-penalty);color:var(--red-penalty);}
+
+/* feedback */
+.feedback-box{display:none;padding:10px 13px;border-radius:9px;font-size:0.81rem;line-height:1.5;margin-bottom:12px;}
+.feedback-box.show{display:block;}
+.feedback-box.good{background:rgba(45,90,39,0.09);border:1.5px solid var(--green-bonus);color:var(--green-bonus);}
+.feedback-box.neutral{background:rgba(74,122,64,0.09);border:1.5px solid var(--p1-accent);color:var(--p1-accent);}
+.feedback-box.bad{background:rgba(139,26,26,0.07);border:1.5px solid var(--red-penalty);color:var(--red-penalty);}
+
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
+.btn-board{background:#6a7060 !important;}
+.btn-board:hover{filter:brightness(1.15);}
+.btn-modal{
+  padding:9px 22px;color:white;border:none;border-radius:8px;
+  font-family:'Playfair Display',serif;font-size:0.92rem;font-weight:700;
+  cursor:pointer;display:none;transition:filter 0.2s;
+}
+.btn-modal:hover{filter:brightness(1.1);}
+body.phase-1 .btn-modal{background:var(--p1-header);}
+body.phase-2 .btn-modal{background:var(--p2-header);}
+
+/* ── TRANSITION SCREEN ── */
+.transition-card{
+  background:var(--p2-card);
+  border:2px solid rgba(200,147,42,0.3);
+  border-radius:20px;padding:40px 44px;
+  box-shadow:0 12px 48px var(--shadow);
+  text-align:center;
+}
+.transition-card .t-emoji{font-size:3.5rem;display:block;margin-bottom:14px;}
+.transition-card h2{font-family:'Playfair Display',serif;font-size:2rem;color:var(--brown);margin-bottom:10px;}
+.transition-card .t-earned{
+  font-family:'DM Mono',monospace;font-size:2.6rem;
+  color:var(--p2-accent);font-weight:500;margin:16px 0 6px;
+}
+.transition-card .t-sub{font-size:0.88rem;color:#6a5a4a;margin-bottom:24px;}
+.transition-rules{
+  background:rgba(181,69,27,0.07);border-left:4px solid var(--p2-accent);
+  border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:26px;text-align:left;
+}
+.transition-rules h3{font-family:'DM Mono',monospace;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--p2-accent);margin-bottom:8px;}
+.transition-rules li{font-size:0.84rem;line-height:1.7;list-style:none;color:#4a3a2a;}
+.transition-rules li::before{content:'🏪 ';}
+
+/* ── END SCREEN ── */
+.end-card{
+  background:var(--p2-card);border:2px solid rgba(200,147,42,0.25);
+  border-radius:16px;padding:34px 38px;
+  box-shadow:0 8px 40px var(--shadow);text-align:center;
+}
+.end-card h2{font-family:'Playfair Display',serif;font-size:1.9rem;margin-bottom:6px;}
+.end-card .end-emoji{font-size:2.8rem;display:block;margin-bottom:8px;}
+.end-card .end-grade{font-family:'Playfair Display',serif;font-size:1.55rem;color:var(--p2-accent);font-weight:900;margin-bottom:4px;}
+.end-card .end-balance{font-family:'DM Mono',monospace;font-size:1.05rem;color:#6a5a4a;margin-bottom:22px;}
+.score-table{display:flex;flex-direction:column;gap:8px;margin-bottom:22px;}
+.score-row{
+  display:flex;justify-content:space-between;align-items:center;
+  background:white;padding:10px 16px;border-radius:9px;
+  border:2px solid rgba(61,43,31,0.07);
+}
+.score-row .sr-label{font-size:0.85rem;color:#5a4a3a;}
+.score-row .sr-val{font-family:'DM Mono',monospace;font-size:0.95rem;color:var(--p2-accent);}
+.score-row.indent{margin-left:18px;background:rgba(200,147,42,0.04);}
+.btn-restart{
+  display:inline-block;padding:11px 30px;background:var(--p2-accent);color:white;
+  font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;
+  border:none;border-radius:10px;cursor:pointer;transition:filter 0.2s;
+}
+.btn-restart:hover{filter:brightness(1.1);}
+
+/* ── RESUME CARD ── */
+.resume-card{border:2px solid rgba(200,147,42,0.4) !important;}
+body.phase-1 .resume-card{background:linear-gradient(135deg,#f2f7ee,#e8f4e0) !important;}
+.resume-card h2{color:var(--p1-header);}
+.resume-card p{font-size:0.92rem;color:#4a3a2a;margin-bottom:18px;}
+.resume-btns{display:flex;flex-direction:column;gap:10px;}
+.btn-fresh{
+  display:block;width:100%;padding:10px;
+  background:transparent;color:#888;
+  font-family:'Libre Baskerville',serif;font-size:0.88rem;
+  border:2px solid #ddd;border-radius:10px;cursor:pointer;
+  transition:all 0.2s;
+}
+.btn-fresh:hover{border-color:#aaa;color:#555;background:rgba(0,0,0,0.03);}
+.save-indicator{
+  font-family:'DM Mono',monospace;font-size:0.65rem;text-transform:uppercase;
+  letter-spacing:0.1em;padding:3px 10px;border-radius:12px;
+  position:relative;z-index:1;
+}
+body.phase-1 .save-indicator{background:rgba(74,122,64,0.2);color:#3a6232;}
+body.phase-2 .save-indicator{background:rgba(200,147,42,0.2);color:#7a5800;}
+
+@media(max-width:600px){
+  .info-card,.transition-card,.end-card{padding:22px 18px;}
+  .modal{padding:18px 16px;}
+  .market-grid{grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:8px;}
+  .transition-card .t-earned{font-size:2rem;}
+}
+
+/* ══════════════════════════════════════════════════════
+   SCENE BACKGROUNDS — each card paints its own world
+   Set as --scene-bg on #modal-overlay via JS
+══════════════════════════════════════════════════════ */
+/* Algae bloom / murky eutrophication — pollution & pesticides */
+#modal-overlay.scene-algae{--scene-bg:linear-gradient(180deg,#010a02 0%,#031508 14%,#062010 26%,#0a3018 38%,#104020 50%,#1a5828 62%,#286830 72%,#3a7828 80%,#508820 87%,#6a9010 93%,#8a9818 100%);}
+/* Deep ocean — aquaculture, water */
+#modal-overlay.scene-ocean{--scene-bg:linear-gradient(180deg,#04101e 0%,#071e38 16%,#0a3060 30%,#0d4880 44%,#1060a0 57%,#1878b8 68%,#2898c8 78%,#50b8d8 88%,#88d0e4 96%,#b0e0ee 100%);}
+/* Tropical canopy — fair trade, tropical crops */
+#modal-overlay.scene-tropical{--scene-bg:linear-gradient(180deg,#04100a 0%,#081e0c 14%,#102a10 26%,#183c18 38%,#285828 50%,#407840 62%,#5a9848 72%,#78b050 80%,#98c058 87%,#b8cc68 93%,#d0da88 100%);}
+/* Cracked dry earth — desertification, salinization */
+#modal-overlay.scene-dryland{--scene-bg:linear-gradient(180deg,#3a1800 0%,#601e00 14%,#8a3010 26%,#aa4818 38%,#c06828 50%,#d08840 62%,#d8a058 72%,#e0b870 80%,#e8cc90 88%,#f0deb0 94%,#f8ecc8 100%);}
+/* Smoke and fire horizon — slash & burn, deforestation */
+#modal-overlay.scene-fire{--scene-bg:linear-gradient(180deg,#080200 0%,#180400 14%,#340800 26%,#601000 38%,#8a1800 50%,#b03010 62%,#c85020 72%,#d07020 80%,#c89030 86%,#d0a840 91%,#dcc060 96%,#e8d880 100%);}
+/* Canal & wetland — irrigation, water systems */
+#modal-overlay.scene-water{--scene-bg:linear-gradient(180deg,#020e18 0%,#061a2a 14%,#0a2c40 26%,#0e4258 40%,#125872 54%,#1a7080 66%,#2a8878 76%,#48987a 84%,#70a87a 90%,#98bc80 95%,#c0d098 100%);}
+/* Stepped hillside terraces — terracing, monoculture */
+#modal-overlay.scene-hillside{--scene-bg:linear-gradient(180deg,#0a1830 0%,#142440 14%,#1e3858 28%,#285070 42%,#3a6870 56%,#488060 68%,#589050 78%,#70a040 86%,#90b038 91%,#b8c848 95%,#d8da70 100%);}
+/* Dry savanna — pastoral nomadism, shifting cultivation */
+#modal-overlay.scene-savanna{--scene-bg:linear-gradient(180deg,#200c00 0%,#3a1800 14%,#602800 26%,#884010 38%,#a05820 50%,#b87030 62%,#c88840 72%,#d09c50 80%,#d8b060 87%,#e0c878 93%,#e8da98 100%);}
+/* Warm village dusk — diet, food sovereignty, local markets */
+#modal-overlay.scene-village{--scene-bg:linear-gradient(180deg,#080018 0%,#180830 16%,#341040 30%,#542858 44%,#784060 58%,#985868 68%,#a87060 76%,#c08848 82%,#d0a038 87%,#e0b840 91%,#ecd060 95%,#f4e480 100%);}
+/* Industrial grey — agribusiness, economies of scale */
+#modal-overlay.scene-industrial{--scene-bg:linear-gradient(180deg,#040408 0%,#0c0c18 14%,#181828 26%,#282838 38%,#383848 50%,#484858 62%,#585860 72%,#686868 80%,#787870 87%,#909080 93%,#a8a890 100%);}
+/* Suburban sprawl — suburbanization, women/land loss */
+#modal-overlay.scene-suburb{--scene-bg:linear-gradient(180deg,#8ab4d8 0%,#a8c8e4 18%,#c0d8ee 34%,#d8e8f4 50%,#e4ece8 64%,#d0dcb8 76%,#b8c898 86%,#a0b478 93%,#909060 100%);}
+/* Sunrise over fields — problems to solutions bridge */
+#modal-overlay.scene-sunrise{--scene-bg:linear-gradient(180deg,#080e20 0%,#101830 12%,#182840 24%,#284868 36%,#406880 48%,#607858 58%,#888040 66%,#b09028 72%,#d0a820 78%,#e8b828 83%,#f0cc40 88%,#f4dc60 93%,#f8ec88 100%);}
+/* Full panorama — big picture synthesis */
+#modal-overlay.scene-panorama{--scene-bg:linear-gradient(180deg,#08101e 0%,#102030 12%,#1a3848 24%,#285858 36%,#386848 48%,#507840 58%,#708838 66%,#909830 72%,#b0a830 78%,#c8b038 83%,#d8c048 88%,#e4d060 93%,#f0e080 100%);}
+/* Dewy organic garden — organic farming */
+#modal-overlay.scene-organic{--scene-bg:linear-gradient(180deg,#020a04 0%,#061408 14%,#0c2410 26%,#183820 38%,#285830 50%,#407840 62%,#5a9848 72%,#78b458 80%,#98c870 87%,#b8da88 93%,#d0e8a0 100%);}
+/* Plantation canopy — fair trade coffee/chocolate */
+#modal-overlay.scene-plantation{--scene-bg:linear-gradient(180deg,#020800 0%,#081200 12%,#102008 24%,#1a3010 36%,#284820 48%,#386030 58%,#4a7a38 66%,#5c9040 72%,#78a040 78%,#98b038 83%,#b8b830 88%,#c8c038 93%,#d4cc58 100%);}
+/* Rooftop city skyline — urban farming, CSA */
+#modal-overlay.scene-rooftop{--scene-bg:linear-gradient(180deg,#020408 0%,#060c18 12%,#0c1830 24%,#182840 38%,#243858 52%,#384858 64%,#485858 74%,#586860 82%,#6a7860 88%,#808870 93%,#989880 100%);}
+/* Green lab/field — GMO biotechnology */
+#modal-overlay.scene-gmo{--scene-bg:linear-gradient(180deg,#020c04 0%,#081808 12%,#102810 24%,#1c3c18 36%,#2a5020 48%,#3c6828 58%,#508030 66%,#669838 72%,#80b040 78%,#9cc048 83%,#b8cc58 88%,#d0d870 93%,#e4e890 100%);}
+/* Open farmfield sky — general field, distribution, CSA */
+#modal-overlay.scene-farmfield{--scene-bg:linear-gradient(180deg,#3870b0 0%,#5090c8 16%,#70a8d0 30%,#90bcd8 44%,#a8c8d0 56%,#b8c8a8 66%,#a8b868 74%,#b0b840 80%,#c8c840 86%,#dcd850 91%,#ece870 100%);}
+/* Consequence warning — red penalty events */
+#modal-overlay.scene-consequence{--scene-bg:linear-gradient(180deg,#0e0000 0%,#200000 12%,#3c0400 24%,#5c0800 36%,#780c00 48%,#941408 58%,#a82010 66%,#b83018 72%,#c04020 78%,#c85028 83%,#cc6030 88%,#d07040 93%,#d88858 100%);}
+/* Rolling local hills — local food movement, honey, seasonal */
+#modal-overlay.scene-localhills{--scene-bg:linear-gradient(180deg,#2858a0 0%,#4878b8 16%,#6898c8 30%,#88b0cc 44%,#a0bcc0 56%,#a8b880 68%,#98a848 78%,#a8a830 84%,#c0b030 89%,#d8c040 93%,#e8d858 100%);}
+/* Policy/economics — government, subsidies, commodity chains */
+#modal-overlay.scene-economic{--scene-bg:linear-gradient(180deg,#080810 0%,#101028 14%,#1c1c40 28%,#2c2c58 42%,#3c3858 56%,#504848 68%,#685848 78%,#806858 85%,#987870 91%,#b09080 100%);}
+</style>
+</head>
+<body class="phase-1">
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <div class="header-title">🌾 Harvest Market Challenge</div>
+    <div class="header-sub">AP Human Geography</div>
+  </div>
+  <div class="phase-badge" id="phase-badge">🗺️ The Field Guide</div>
+  <div class="save-indicator" id="save-indicator" style="display:none">💾 Saved</div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════
+     SETUP SCREEN
+═══════════════════════════════════════════════════ -->
+<div id="setup-screen" class="screen active">
+
+  <!-- Resume banner — shown only if a save exists -->
+  <div id="resume-card" style="display:none" class="info-card resume-card">
+    <h2>👋 Welcome back!</h2>
+    <p id="resume-summary">Your progress has been saved.</p>
+    <div class="resume-btns">
+      <button class="btn-main" id="btn-resume" onclick="resumeGame()">▶ Continue Where I Left Off</button>
+      <button class="btn-fresh" onclick="confirmFresh()">↺ Start Fresh</button>
+    </div>
+  </div>
+
+  <div class="info-card" id="new-game-card">
+    <h2>Welcome to the Market 🌿</h2>
+    <p>This activity has two parts. First you'll walk through the market learning key concepts — then you'll use what you learned to shop strategically and earn a profit.</p>
+    <div class="rules-box">
+      <h3>🗺️ The Field Guide</h3>
+      <ul>
+        <li>Visit all 12 knowledge stalls</li>
+        <li>Each stall pairs two related concepts in one card — read carefully!</li>
+        <li>Answer a recall question to earn your shopping budget</li>
+        <li>Correct = <strong>$8</strong> &nbsp;|&nbsp; Incorrect = <strong>$4</strong> (you still learn!)</li>
+        <li>Max budget heading into the market: <strong>$96</strong></li>
+      </ul>
+    </div>
+    <div class="rules-box">
+      <h3>🏪 The Farmers Market</h3>
+      <ul>
+        <li>Shop 20 market stalls using your earned budget</li>
+        <li>Pay each stall's entry cost to attempt its question</li>
+        <li>Correct = entry fee back + profit &nbsp;|&nbsp; Wrong = fee lost</li>
+        <li>Can't afford a stall? It stays locked — choose wisely!</li>
+        <li>consequence events can strike between stalls!</li>
+      </ul>
+    </div>
+    <button class="btn-main" onclick="startPart1()">🌱 Begin the Field Guide →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     PART 1 SCREEN — Learning Walk
+═══════════════════════════════════════════════════ -->
+<div id="part1-screen" class="screen">
+  <div class="wallet-bar">
+    <div>
+      <div class="wallet-label">Knowledge Earnings</div>
+      <div class="wallet-amount" id="p1-wallet">$0</div>
+    </div>
+    <div class="wallet-stats" id="p1-stats">0 of 12 stalls visited</div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="p1-progress" style="width:0%"></div></div>
+  <div class="section-title">— The Field Guide — Read, learn, earn!</div>
+  <div class="market-grid" id="p1-grid"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TRANSITION SCREEN
+═══════════════════════════════════════════════════ -->
+<div id="transition-screen" class="screen">
+  <div class="transition-card">
+    <span class="t-emoji">🏪</span>
+    <h2>Field Guide Complete!</h2>
+    <p style="color:#6a5a4a;font-size:0.92rem;">You've built your knowledge base. Now put it to work.</p>
+    <div class="t-earned" id="transition-earned">$0</div>
+    <div class="t-sub" id="transition-sub">earned — this is your shopping budget</div>
+    <div class="transition-rules">
+      <h3>🏪 The Farmers Market — How It Works</h3>
+      <ul>
+        <li>Choose a stall and <strong>pay its entry cost</strong> to attempt it</li>
+        <li>Answer the AP-style question correctly → get your money back <em>plus profit</em></li>
+        <li>Answer incorrectly → you <em>lose the entry fee</em></li>
+        <li>You can't enter a stall you can't afford — choose wisely!</li>
+        <li>Watch out for consequence events between stalls</li>
+      </ul>
+    </div>
+    <button class="btn-main" onclick="startPart2()" style="max-width:360px;margin:0 auto;">🛒 Enter the Farmers Market →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     PART 2 SCREEN — Market Challenge
+═══════════════════════════════════════════════════ -->
+<div id="part2-screen" class="screen">
+  <div class="wallet-bar">
+    <div>
+      <div class="wallet-label">Market Wallet</div>
+      <div class="wallet-amount" id="p2-wallet">$0</div>
+    </div>
+    <div class="wallet-stats" id="p2-stats">0 of 20 stalls attempted</div>
+
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="p2-progress" style="width:0%"></div></div>
+  <div class="section-title" id="p2-section-title">— The Farmers Market — Pay to enter, profit if correct!</div>
+  <div class="market-grid" id="p2-grid"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     END SCREEN
+═══════════════════════════════════════════════════ -->
+<div id="end-screen" class="screen">
+  <div class="end-card">
+    <span class="end-emoji" id="end-emoji">🏆</span>
+    <h2>Market Closed!</h2>
+    <div class="end-grade" id="end-grade"></div>
+    <div class="end-balance" id="end-balance"></div>
+    <div class="score-table" id="score-table"></div>
+    <button class="btn-capstone" onclick="startCapstone()">🌾 Capstone Challenge →</button>
+    <button class="btn-restart" onclick="restartGame()">🔄 Play Again</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     CAPSTONE SCREEN
+═══════════════════════════════════════════════════ -->
+<div id="capstone-screen" class="screen">
+  <div class="info-card" id="capstone-card">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="modal-phase-tag purchase" id="modal-tag"></div>
+    <span class="modal-emoji" id="modal-emoji"></span>
+    <h3 id="modal-title"></h3>
+    <p class="modal-desc" id="modal-desc"></p>
+    <div id="modal-extra"></div><!-- concept card or wager banner -->
+    <div class="question-box" id="question-box" style="display:none">
+      <p id="modal-question"></p>
+    </div>
+    <div class="answer-options" id="answer-options"></div>
+    <div class="feedback-box" id="feedback-box"></div>
+    <div class="modal-actions">
+      <button class="btn-modal btn-board" id="btn-board" onclick="hideModal()" style="display:none">← Back to Market</button>
+      <button class="btn-modal" id="btn-continue">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   DATA — PART 1: Knowledge Stalls (5.10 concepts)
+   Each stall teaches a concept, then asks a simple recall question.
+   earn = correct ? 8 : 4
+══════════════════════════════════════════════════════ */
+const KNOWLEDGE_STALLS = [
+
+  // ══ ENVIRONMENTAL EFFECTS ══
+
+  {
+    id:'k1', emoji:'🌊', name:'Pollution & Pesticides', scene:'scene-algae', tag:'Pollution',
+    concept:'Agriculture pollutes in two major ways. <strong>Fertilizer runoff</strong> carries excess nitrogen and phosphorus into streams and lakes. This floods the water with nutrients, causing algae to grow out of control — the algae then uses up all the oxygen, creating "dead zones" where fish and other aquatic life can\'t survive. <strong>Pesticides</strong> do more than kill target pests: they harm pollinators like bees (essential for 1 in 3 bites of food we eat), contaminate groundwater, and build up in the food chain as animals eat each other. Both forms of pollution are direct consequences of intensive chemical farming.',
+    question:'A farmer applies heavy doses of nitrogen fertilizer to a cornfield near a river. Which sequence of events BEST describes the likely environmental outcome?',
+    answers:[
+      {text:'Runoff enriches river water → algae blooms → oxygen depletion → fish die', correct:true},
+      {text:'Runoff evaporates → salt accumulates in river sediment → fish adapt', correct:false},
+      {text:'Runoff absorbed by wetlands → water quality improves downstream', correct:false},
+      {text:'Runoff increases river murkiness → flood risk rises → farmers relocate', correct:false}
+    ],
+    explain:'When fertilizer runs off into rivers and lakes, it overloads the water with nutrients → algae blooms → oxygen runs out → fish die (dead zones). Pesticide pollution separately harms bees and other beneficial insects and builds up in the food chain.'
+  },
+  {
+    id:'k2', emoji:'🏜️', name:'Soil Degradation', scene:'scene-dryland', tag:'Environment',
+    concept:'Agriculture can destroy the very soil it depends on — in two distinct ways. <strong>Soil salinization</strong> happens when over-irrigated land in dry regions is flooded with water that then evaporates, leaving behind dissolved salts. Over time, the salt builds up until nothing can grow — a major problem in the Aral Sea basin and California\'s Central Valley. <strong>Desertification</strong> is broader: overgrazing, deforestation, and cutting rest periods short strip away vegetation, leaving soil exposed to wind erosion until productive land turns into desert. The Sahel region of sub-Saharan Africa is the world\'s most prominent example.',
+    question:'A farmer in California\'s Central Valley has irrigated the same fields for 30 years. Lately, white crusts are appearing on the soil and crop yields are dropping even though he\'s watering just as much as before. Meanwhile, in the Sahel region of Africa, a neighboring village\'s land has turned to cracked, bare earth after years of overgrazing. Which statement correctly identifies what is happening in each location?',
+    answers:[
+      {text:'Both locations are experiencing desertification caused by the same overgrazing problem', correct:false},
+      {text:'California is experiencing soil salinization from irrigation buildup; the Sahel village is experiencing desertification from vegetation loss', correct:true},
+      {text:'California is experiencing desertification; the Sahel is experiencing soil salinization from over-irrigation', correct:false},
+      {text:'Both locations have the same problem — too much water is being applied to the soil', correct:false}
+    ],
+    explain:'Soil Salinization: Decades of irrigation in dry California left dissolved salts behind as water evaporated — the white crusts are salt, and the soil is becoming infertile. Desertification: Overgrazing in the Sahel stripped away the plants holding soil in place, and wind erosion is turning the land to desert.'
+  },
+  {
+    id:'k3', emoji:'🌿', name:'Land Cover Change & Conservation', scene:'scene-sunrise', tag:'Environment',
+    concept:'When forests, wetlands, and grasslands are converted to farmland, the landscape changes in lasting ways. Forests store carbon — farms release it. Wetlands filter water naturally — drained fields don\'t. This <strong>land cover change</strong> disrupts water cycles, reduces wildlife, and can alter regional climates. In response, <strong>conservation efforts</strong> try to limit the damage: conservation easements are legal agreements that restrict development on private farmland, buffer zones keep plows away from waterways, and cover crops hold soil in place between growing seasons. It\'s the ongoing tension between farming more land and protecting what\'s left.',
+    question:'A county in Ohio wants to drain a riverside marsh to create new farmland. An environmental group opposes the plan, arguing the marsh filters pollutants from farm runoff, absorbs floodwater, and stores carbon. The county responds by proposing a conservation easement on the land instead. Which statement BEST describes what is happening in this situation?',
+    answers:[
+      {text:'The county\'s drainage plan is an example of conservation; the environmental group is opposing land cover change', correct:false},
+      {text:'Draining the marsh would be land cover change; the easement is a conservation response designed to protect the ecosystem it provides', correct:true},
+      {text:'Both the drainage plan and the easement increase carbon emissions from the land', correct:false},
+      {text:'Conservation easements are only used to address soil salinization, not wetland loss', correct:false}
+    ],
+    explain:'Land Cover Change: Converting the marsh to farmland would release stored carbon, remove natural water filtration, and eliminate wildlife habitat. The Conservation Easement is the direct response — a legal tool to prevent that conversion and protect what the wetland does.'
+  },
+
+  // ══ LANDSCAPE-ALTERING PRACTICES ══
+
+  {
+    id:'k4', emoji:'🔥', name:'Clearing the Land', scene:'scene-fire', tag:'Landscape',
+    concept:'Two practices involve deliberately removing existing vegetation to create farmland — at very different scales. <strong>Slash-and-burn</strong> is a small-scale traditional technique: farmers cut and burn vegetation, then plant crops in the nutrient-rich ash. It works when populations are small and the land gets a long rest period to recover — but when too many farmers need land, they come back before the soil is ready and it permanently degrades. <strong>Deforestation</strong> is large-scale: agriculture is the #1 driver of global forest loss. The Amazon and Southeast Asia lose millions of acres every year to cattle ranching and palm oil plantations — permanently eliminating wildlife habitat and disrupting rainfall patterns.',
+    question:'In the Congo Basin, a small family clears a half-acre patch of forest, burns the brush, and plants cassava in the ash-rich soil. They plan to move to a new patch in two years and let this one rest. Five hundred miles away, a corporation clears 10,000 acres of Amazon rainforest to plant soybeans for export. Which statement BEST contrasts these two situations?',
+    answers:[
+      {text:'Both are equally destructive forms of deforestation that permanently damage the forest', correct:false},
+      {text:'The family is using slash-and-burn as part of shifting cultivation; the corporation is engaged in large-scale deforestation for commercial agriculture', correct:true},
+      {text:'The family\'s approach is deforestation; the corporation\'s approach is slash-and-burn', correct:false},
+      {text:'The corporation\'s clearing is sustainable because it uses modern equipment; the family\'s is not', correct:false}
+    ],
+    explain:'Slash and Burn + Shifting Cultivation: The family\'s small-scale technique can be sustainable when land gets enough rest to recover. Large-Scale Deforestation: The corporation\'s clearing is permanent, eliminates wildlife habitat, and is the world\'s leading driver of forest loss.'
+  },
+  {
+    id:'k5', emoji:'💧', name:'Water & the Landscape', scene:'scene-water', tag:'Landscape',
+    concept:'Humans reshape water systems to grow more food — often with major environmental costs. <strong>Irrigation</strong> brings water to dry regions through canals, reservoirs, and large rotating sprinklers, turning flat, arid land into farmable fields. But it also draws down underground water reserves, waterloggs soils, and contributes to salt buildup. <strong>Draining wetlands</strong> converts marshes and swamps into farmland — the U.S. has lost over 50% of its original wetlands largely to agriculture. This destroys natural systems that do important work: wetlands filter water, soak up floodwater, store carbon, and provide animal habitat. Both practices trade long-term environmental health for short-term farm expansion.',
+    question:'An Arizona cotton farm pumps water from an underground source to irrigate fields in the desert. A hundred miles of wetland along the Mississippi Delta has been drained and converted to cornfields over the past 50 years. A major flood hits the region — the remaining wetlands absorb it; the converted cornfields are underwater for weeks. What do both the Arizona irrigation system and the Mississippi wetland drainage have in common?',
+    answers:[
+      {text:'Both increased water availability for crops with no long-term environmental costs', correct:false},
+      {text:'Both physically reshaped natural water systems to expand farmland, with significant long-term environmental costs', correct:true},
+      {text:'Both are traditional practices used only by subsistence farmers in less-developed countries', correct:false},
+      {text:'Both are conservation efforts designed to protect soil from erosion', correct:false}
+    ],
+    explain:'Irrigation: Tapping underground water reserves transforms deserts into farmland — but draws down reserves that took thousands of years to fill and leaves salt behind. Draining Wetlands: Removing natural flood buffers and water filters converts ecosystems into fields, as the Mississippi floods showed dramatically.'
+  },
+  {
+    id:'k6', emoji:'🏔️', name:'Terraces & Monoculture', scene:'scene-hillside', tag:'Landscape',
+    concept:'<strong>Agricultural terracing</strong> transforms steep hillsides into a staircase of flat growing platforms, reducing erosion, capturing rainfall, and making slopes farmable. The Inca terraces of Peru and rice terraces of the Philippines are classic examples — ancient engineering still visible from satellite today. In contrast, modern <strong>monoculture</strong> creates vast single-crop fields with no variety, no hedgerows, no crop rotation. While efficient to manage, monocultures are risky — because every plant is genetically identical, a single pest or disease can wipe out an entire crop across millions of acres. The Irish Potato Famine (1845), caused by one fungus spreading through Ireland\'s single potato variety, showed just how catastrophic that can be.',
+    question:'The Ifugao people of the Philippines have farmed steep mountain slopes for 2,000 years using hand-carved step terraces that catch rainwater and prevent erosion. In Iowa, a single farm plants 5,000 acres of the same corn variety every year with no crop rotation. In 2009, a new corn fungus swept through the Midwest and wiped out entire harvests. Which statement BEST explains the contrasting agricultural risks shown here?',
+    answers:[
+      {text:'Terracing increases erosion risk; monoculture reduces it through uniform ground cover', correct:false},
+      {text:'Terracing reduces erosion by reshaping the land to work with slopes; monoculture creates vulnerability because identical plants have no defense against a single disease', correct:true},
+      {text:'Both terracing and monoculture were developed during the Green Revolution of the 1960s', correct:false},
+      {text:'Monoculture is only practiced on terraced hillsides in tropical regions', correct:false}
+    ],
+    explain:'Terraces: Ancient engineering that reshapes hillsides to prevent erosion and make slopes farmable — a smart landscape solution. Monoculture: Planting the same crop across millions of acres means one disease can devastate everything at once — exactly what happened with the Irish Potato Famine and repeated corn blights.'
+  },
+  {
+    id:'k7', emoji:'🔄', name:'Mobile Farming Systems', scene:'scene-savanna', tag:'Landscape',
+    concept:'Two traditional farming systems involve movement rather than permanent settlement — and both work well until outside pressure breaks the balance. <strong>Shifting cultivation</strong> rotates farmland: clear a plot, farm it for 2–3 years, then move on and let the soil rest and recover while farming elsewhere. It works when there aren\'t too many people and the land gets enough rest time. It breaks down when population growth means farmers have to come back too soon, before the soil is ready, and it permanently degrades. <strong>Pastoral nomadism</strong> moves livestock seasonally across large territories, following rainfall and fresh grass. Found across Africa, Central Asia, and the Middle East, it works well at small herd sizes — but causes overgrazing and land degradation when herds grow too large or political borders block traditional migration routes.',
+    question:'The Maasai of East Africa have herded cattle across seasonal grasslands for centuries, moving when one area is grazed down so it can recover. In Southeast Asia, hill farmers rotate their crops across several forest plots, farming each for two years before moving on. Both systems are now under stress — the Maasai\'s migration routes are being blocked by fences, and the hill farmers\' growing families mean they must return to plots much sooner than before. What do these two situations have in common?',
+    answers:[
+      {text:'Both groups are switching to permanent settled farming, which is causing the land to degrade', correct:false},
+      {text:'Both are traditional mobile farming systems that work well under low pressure but cause land degradation when outside forces prevent them from functioning as designed', correct:true},
+      {text:'Both practices permanently clear forests each season to create new farmland', correct:false},
+      {text:'Both systems were eliminated by the Green Revolution\'s introduction of high-yield crop varieties', correct:false}
+    ],
+    explain:'Pastoral Nomadism: The Maasai system works when herds can move freely — blocked routes force overgrazing in one place. Shifting Cultivation: Hill farmers\' system works when land gets enough rest — population pressure cutting that rest time short causes permanent soil degradation. Both break down under pressure.'
+  },
+
+  // ══ SOCIETAL EFFECTS ══
+
+  {
+    id:'k8', emoji:'🍔', name:'Diet, Demand & Food Sovereignty', scene:'scene-village', tag:'Society',
+    concept:'What people eat shapes agricultural systems — and who controls those systems matters. The <strong>nutrition transition</strong>: as countries become wealthier, people\'s diets shift away from simple plant-based staples toward more meat, dairy, and processed foods. This sounds like progress — but producing 1 lb of beef requires about 7 lbs of grain and 1,800 gallons of water, so rising global meat consumption puts enormous pressure on farms and land. At the same time, the <strong>food sovereignty</strong> movement argues that communities — not global corporations or markets — should have the right to decide what gets grown, how it\'s grown, and who benefits. It\'s a pushback against a food system increasingly controlled by distant companies rather than local farmers.',
+    question:'South Korea\'s economy grew rapidly in the late 20th century. As incomes rose, families shifted from rice-heavy diets to eating far more beef and processed foods. To meet demand, massive feedlots replaced small farms, and grain imports increased dramatically. Meanwhile, a rural community in Brazil pushed back against a multinational corporation\'s plan to convert their traditional farming land to industrial soybean production — arguing that outsiders had no right to dictate what was grown on their land. Which concepts BEST describe these two situations?',
+    answers:[
+      {text:'South Korea is experiencing food sovereignty; Brazil is experiencing the nutrition transition', correct:false},
+      {text:'South Korea is experiencing the nutrition transition, which is increasing agricultural pressure; the Brazilian community is asserting food sovereignty', correct:true},
+      {text:'Both situations describe communities successfully resisting industrial food systems', correct:false},
+      {text:'Both situations are examples of the nutrition transition increasing demand for plant-based foods', correct:false}
+    ],
+    explain:'Nutrition Transition: South Korea\'s rising incomes drove a shift toward meat and processed foods — requiring far more land, water, and grain than the traditional diet. Food Sovereignty: The Brazilian community is asserting their right to control their own land and food system rather than letting distant corporations decide for them.'
+  },
+  {
+    id:'k9', emoji:'📉', name:'Market Power & Economics', scene:'scene-economic', tag:'Society',
+    concept:'Commercial farming connects farmers to global markets — but not on equal terms. <strong>Commodity price swings</strong>: when crop prices are set by global supply and demand, a bumper crop worldwide can crash prices below what it cost a farmer to grow that crop. A Kansas wheat farmer has zero control over what wheat sells for in Chicago or London. <strong>Agribusiness consolidation</strong> makes this worse: a small number of giant corporations now control the global market for seeds, fertilizers, chemicals, and food processing. This means small and mid-sized family farms get squeezed from both ends — they pay whatever the big companies charge for supplies, then sell into unpredictable markets they don\'t control. Rural communities and independent farmers lose out as power concentrates at the top.',
+    question:'An Iowa soybean farmer buys all her seeds from one of three companies that control most of the global seed market. She sells her harvest at prices set by global trading markets, over which she has no influence. In 2012, a worldwide bumper crop caused soybean prices to crash — she sold her beans for less than it cost to grow them. At the same time, the seed company raised its prices. Which statement BEST explains her situation?',
+    answers:[
+      {text:'Agribusiness consolidation stabilized her input costs, helping offset the market price crash', correct:false},
+      {text:'She is caught between unpredictable global market prices and the concentrated power of corporations that control her inputs — with no leverage on either side', correct:true},
+      {text:'Small farmers like her benefit from consolidation because larger firms take on the financial risk', correct:false},
+      {text:'Unpredictable crop prices only affect large commercial farms, not small family operations', correct:false}
+    ],
+    explain:'Global crop price swings expose commercial farmers to losses completely outside their control. When corporations also control seeds, chemicals, and processing, small farmers have no power on either end — they pay what the corporation charges and sell at whatever price the global market sets.'
+  },
+  {
+    id:'k10', emoji:'👩‍🌾', name:'Women & Suburbanization', scene:'scene-suburb', tag:'Society',
+    concept:'Two societal effects of agriculture that often get overlooked. <strong>Women\'s role in farming</strong>: in many poorer, less-developed countries, women do 60–80% of the daily farm work — planting, weeding, harvesting, and food processing. Yet they are frequently denied the right to own land, take out loans, or make decisions about what gets grown. Research consistently shows that when women farmers get equal access to land and resources, entire communities become more food-secure. <strong>Suburbanization</strong>: as cities and suburbs expand outward, they pave over farmland — and the land lost is often the most fertile, since towns were originally built near good soil. Unlike most land-use changes, this one cannot be undone. Once farmland is turned into a subdivision or strip mall, it\'s gone permanently.',
+    question:'In rural Tanzania, women grow 70% of the family\'s food — but cannot legally own the land they farm, cannot take out a bank loan, and are excluded from decisions about what to plant. Studies show that giving these women equal land rights dramatically improves how much food the community produces. Meanwhile, outside Atlanta, Georgia, some of the most fertile farmland in the Southeast is being converted into subdivisions and shopping centers as the city expands. A geographer notes that once this land is paved over, it will never be farmland again. What do these two situations share?',
+    answers:[
+      {text:'Both are problems found only in less-developed countries where land laws are weak', correct:false},
+      {text:'Both represent farming capacity that is either wasted or permanently lost — reducing the ability of communities to feed themselves', correct:true},
+      {text:'Both are driven by the same global trade forces that fuel corporate consolidation', correct:false},
+      {text:'Both can be fully corrected by government subsidies directed at small farmers', correct:false}
+    ],
+    explain:'Women in Agriculture: Excluding women from land rights wastes the potential of the people already doing most of the farming — communities produce less food than they could. Suburbanization: Once fertile land near cities is paved over, that agricultural potential is gone permanently — Atlanta\'s sprawl is a classic U.S. example.'
+  },
+
+  // ══ BRIDGING CONCEPTS ══
+
+  {
+    id:'k11', emoji:'🌾', name:'From Problems to Solutions', scene:'scene-sunrise', tag:'Connecting Ideas',
+    concept:'The agricultural problems we\'ve explored — pollution, land degradation, and social inequities — are exactly what today\'s farming movements try to fix. <strong>Organic farming</strong> reduces chemical pollution. <strong>Fair trade</strong> helps farmers in poorer countries get paid fairly. <strong>Urban farming and CSAs</strong> rebuild local food connections that industrial consolidation has weakened. <strong>Biotechnology (GMOs and aquaculture)</strong> promises higher yields without clearing new land — but sparks new debates about crop variety loss and corporate control of the food supply. Every solution in the Farmers Market connects back to a real problem.',
+    question:'An Ethiopian coffee farmer sells his beans to an export company for $0.60 per pound. By the time that coffee reaches a café in Chicago, it sells for $18 per cup. The farmer sees almost none of that value. A fair trade cooperative offers him a certified price of $1.80 per pound and guaranteed buyers. Which agricultural practice MOST directly addresses the problem illustrated here?',
+    answers:[
+      {text:'Precision agriculture using GPS-guided irrigation systems', correct:false},
+      {text:'Fair trade certification that guarantees above-market prices for small producers', correct:true},
+      {text:'Aquaculture that reduces pressure on wild fish stocks', correct:false},
+      {text:'Urban farming that improves food access in low-income neighborhoods', correct:false}
+    ],
+    explain:'Fair trade directly responds to the problem of unequal global supply chains. The Ethiopian farmer is earning a tiny fraction of what his crop is worth by the time it reaches consumers. Fair trade certification cuts out exploitative middlemen and guarantees a fair, stable price.'
+  },
+  {
+    id:'k12', emoji:'🧩', name:'The Big Picture', scene:'scene-panorama', tag:'Synthesis',
+    concept:'All three categories of agricultural consequences are connected. <strong>Environmental effects</strong> (pollution, salinization, desertification, land cover change) describe what happens to ecosystems. <strong>Landscape-altering practices</strong> (slash-and-burn, terraces, irrigation, deforestation, draining wetlands, shifting cultivation, pastoral nomadism) describe how agriculture physically reshapes the land. <strong>Societal effects</strong> (changing diets, women\'s roles, market economics) describe how farming systems shape — and are shaped by — human societies. On the exam, connect the practice → what it does to land → who it affects.',
+    question:'A subsistence farmer in the Sahel clears and burns forest to plant crops, farms the plot for two years, then moves on. Which combination of agricultural consequences does this BEST illustrate?',
+    answers:[
+      {text:'Soil salinization (from irrigation) and price vulnerability (from selling into global markets)', correct:false},
+      {text:'Slash-and-burn landscape alteration, shifting cultivation land use, and potential desertification if the land doesn\'t get enough rest time to recover', correct:true},
+      {text:'Draining wetlands (for paddy farming) and women\'s labor inequity (in processing)', correct:false},
+      {text:'Agribusiness consolidation (displacing small farms) and land cover change (from GMO monoculture)', correct:false}
+    ],
+    explain:'This scenario illustrates three connected consequences: slash-and-burn (the landscape practice), shifting cultivation (the broader mobile farming system), and desertification risk (the environmental outcome when population pressure shortens fallow recovery time).'
+  }
+
+];
+
+/* ══════════════════════════════════════════════════════
+   DATA — PART 2: Market Stalls (5.11 questions)
+   cost = entry fee; correct earns cost + profit back; wrong loses cost
+══════════════════════════════════════════════════════ */
+const MARKET_STALLS = [
+  // ── Sub-topic A: Agricultural Innovations & Debates ──
+  {
+    id:'m1', emoji:'🌽', name:'GMO Sweet Corn', scene:'scene-gmo', tag:'Biotechnology', cost:8, profit:10,
+    desc:'High-yield corn engineered for pest resistance and drought tolerance.',
+    question:'Which statement BEST represents a concern critics raise about GMOs?',
+    answers:[
+      {text:'They always reduce crop yields compared to conventional varieties', correct:false},
+      {text:'They may reduce biodiversity and concentrate seed control in agribusinesses', correct:true},
+      {text:'They are illegal in all more-developed countries', correct:false},
+      {text:'They require significantly more water than conventional crops', correct:false}
+    ],
+    explain:'GMOs can raise yields, but critics argue they reduce biodiversity and place seed control in corporate hands — limiting small farmers and reducing genetic diversity in food systems.'
+  },
+  {
+    id:'m2', emoji:'🌱', name:'Heirloom Tomato Seeds', scene:'scene-organic', tag:'Biodiversity', cost:7, profit:9,
+    desc:'Non-GMO seeds preserving centuries of plant genetic diversity.',
+    question:'Widespread GMO monoculture adoption MOST directly threatens:',
+    answers:[
+      {text:'The profitability of large-scale agribusiness firms', correct:false},
+      {text:'Plant genetic diversity as traditional varieties are abandoned', correct:true},
+      {text:'Fair trade certification program sustainability', correct:false},
+      {text:'Government subsidy programs for commercial grain farmers', correct:false}
+    ],
+    explain:'Research shows that commercial monocultures have dramatically reduced plant variety diversity as farmers shift to patented GMO seeds — creating genetically uniform, more fragile food systems.'
+  },
+  {
+    id:'m3', emoji:'🐟', name:'Farmed Atlantic Salmon', scene:'scene-ocean', tag:'Aquaculture', cost:9, profit:12,
+    desc:'Salmon raised in coastal net-pen hatcheries — no wild fishing required.',
+    question:'Which of the following is a sustainability concern specifically associated with aquaculture?',
+    answers:[
+      {text:'It relies entirely on deforestation to create pond space', correct:false},
+      {text:'Disease and waste from fish farms can degrade surrounding aquatic ecosystems', correct:true},
+      {text:'It reduces the need for synthetic fertilizers in nearby fields', correct:false},
+      {text:'It is only practiced in more-developed countries', correct:false}
+    ],
+    explain:'Aquaculture reduces pressure on wild stocks but concentrated fish pens produce waste, spread disease to wild populations, and can degrade nearby aquatic ecosystems.'
+  },
+  {
+    id:'m4', emoji:'🧬', name:'Herbicide-Tolerant Soybeans', scene:'scene-gmo', tag:'Biotechnology', cost:8, profit:10,
+    desc:'Soybeans engineered to survive direct herbicide spray — simplifying weed control.',
+    question:'Herbicide-tolerant GMO crops have most directly contributed to:',
+    answers:[
+      {text:'Increased plant species diversity in surrounding ecosystems', correct:false},
+      {text:'The emergence of herbicide-resistant "superweeds"', correct:true},
+      {text:'A dramatic global reduction in synthetic pesticide use', correct:false},
+      {text:'Improved soil health through reduced tillage requirements', correct:false}
+    ],
+    explain:'Extensive herbicide use with GMO crops has driven the evolution of resistant "superweeds" and "superpests" — a key sustainability debate in agricultural biotechnology.'
+  },
+  {
+    id:'m5', emoji:'🐠', name:'Farmed Tilapia', scene:'scene-ocean', tag:'Aquaculture', cost:7, profit:9,
+    desc:'Freshwater tilapia raised in inland recirculating tank systems.',
+    question:'Aquaculture is BEST understood as a response to which global challenge?',
+    answers:[
+      {text:'Overuse of synthetic fertilizers in grain farming', correct:false},
+      {text:'Declining wild fish stocks caused by overfishing', correct:true},
+      {text:'Inability of GMO crops to grow in coastal regions', correct:false},
+      {text:'Food deserts in inland areas far from coastlines', correct:false}
+    ],
+    explain:'Aquaculture emerged as a response to wild fish population depletion and now accounts for over half of global seafood — though sustainability concerns around water use and ecosystems remain.'
+  },
+  {
+    id:'m6', emoji:'💉', name:'Drought-Resistant Sorghum', scene:'scene-dryland', tag:'Biotechnology', cost:9, profit:12,
+    desc:'Genetically engineered sorghum producing stable yields with minimal rainfall.',
+    question:'Proponents of agricultural biotechnology most commonly argue GMO crops help address:',
+    answers:[
+      {text:'The elimination of international food distribution networks', correct:false},
+      {text:'The rise of CSA programs in developed countries', correct:false},
+      {text:'Global food insecurity by increasing yields and resilience in vulnerable regions', correct:true},
+      {text:'Suburbanization\'s encroachment on fertile agricultural land', correct:false}
+    ],
+    explain:'Supporters of biotechnology argue that genetically engineered drought-tolerant, high-yield crops can help feed growing populations in poorer regions where climate and rainfall are unreliable.'
+  },
+
+  // ── Sub-topic B: Production & Consumption Movements ──
+  {
+    id:'m7', emoji:'🥦', name:'Certified Organic Kale', scene:'scene-organic', tag:'Organic Farming', cost:8, profit:10,
+    desc:'Organic kale grown without chemical fertilizers or pesticides on a diversified small farm.',
+    question:'Which of the following BEST describes organic farming?',
+    answers:[
+      {text:'It uses high-yield GMO seeds to maximize output per acre', correct:false},
+      {text:'It avoids chemical pesticides and fertilizers, using natural methods and crop rotation instead', correct:true},
+      {text:'It is only viable in less-developed countries with limited technology', correct:false},
+      {text:'It is identical to conventional agriculture but with different marketing', correct:false}
+    ],
+    explain:'Organic farming avoids chemical pesticides and fertilizers, using natural methods and crop rotation instead. It typically costs more and yields less per acre, but produces significantly less chemical runoff and soil damage.'
+  },
+  {
+    id:'m8', emoji:'☕', name:'Fair Trade Coffee', scene:'scene-plantation', tag:'Fair Trade', cost:10, profit:13,
+    desc:'Single-origin beans from a certified cooperative — farmers receive above-market prices.',
+    question:'Fair trade certification MOST directly addresses:',
+    answers:[
+      {text:'Soil salinization caused by over-irrigation in tropical regions', correct:false},
+      {text:'Unequal supply chains where farmers in poorer countries receive unfairly low prices for their crops', correct:true},
+      {text:'Lack of GMO seed adoption among subsistence farmers', correct:false},
+      {text:'Food deserts in urban areas of more-developed countries', correct:false}
+    ],
+    explain:'Fair trade ensures farmers in less-developed countries receive stable, fair prices for their crops — making the global supply chain more equitable instead of leaving most of the profit with middlemen and retailers.'
+  },
+  {
+    id:'m9', emoji:'📦', name:'CSA Vegetable Box', scene:'scene-farmfield', tag:'Community-Supported Ag', cost:11, profit:14,
+    desc:'A weekly share from a local farm — you paid the full season upfront this spring.',
+    question:'Community-Supported Agriculture (CSA) MOST directly benefits small farmers by:',
+    answers:[
+      {text:'Connecting them to large commodity markets and export networks', correct:false},
+      {text:'Providing upfront income before the growing season, reducing financial risk', correct:true},
+      {text:'Allowing them to qualify for government agricultural subsidies', correct:false},
+      {text:'Eliminating the need for sustainable land management', correct:false}
+    ],
+    explain:'In a CSA, consumers pay in advance for a seasonal share — giving farmers guaranteed income before planting and building direct farm-to-consumer relationships outside industrial supply chains.'
+  },
+  {
+    id:'m10', emoji:'🌿', name:'Rooftop Farm Herbs', scene:'scene-rooftop', tag:'Urban Farming', cost:5, profit:7,
+    desc:'Fresh basil and cilantro from a vertical hydroponic garden on a city rooftop.',
+    question:'Urban farming MOST directly helps address:',
+    answers:[
+      {text:'Soil salinization in rural irrigation districts', correct:false},
+      {text:'Deforestation linked to shifting cultivation in tropical regions', correct:false},
+      {text:'Food deserts by providing fresh produce in low-income urban neighborhoods', correct:true},
+      {text:'Overproduction of monoculture crops in the Great Plains', correct:false}
+    ],
+    explain:'Urban farming grows food within cities using rooftops, vacant lots, and vertical systems — directly combating food deserts in low-income neighborhoods.'
+  },
+  {
+    id:'m11', emoji:'🍞', name:'Ancient Grain Sourdough', scene:'scene-farmfield', tag:'Dietary Shifts', cost:7, profit:9,
+    desc:'Stone-milled emmer wheat loaf — part of a trend toward minimally processed whole foods.',
+    question:'In contemporary agriculture, a "dietary shift" most commonly refers to:',
+    answers:[
+      {text:'The transition from nomadic herding to settled farming in the Neolithic era', correct:false},
+      {text:'A consumer movement toward less processed food and reduced meat consumption', correct:true},
+      {text:'Mechanization replacing hand labor in the Second Agricultural Revolution', correct:false},
+      {text:'Subsistence farmers in poorer countries adopting cash crop monocultures', correct:false}
+    ],
+    explain:'Dietary shifts: Especially in wealthier countries, consumers are moving toward whole grains, vegetables, and plant-based diets driven by health awareness and environmental concern.'
+  },
+  {
+    id:'m12', emoji:'🍯', name:'Local Raw Honey', scene:'scene-localhills', tag:'Local Food Movement', cost:6, profit:8,
+    desc:'Wildflower honey from hives just 4 miles from this market — near-zero food miles.',
+    question:'The "local food movement" is PRIMARILY motivated by:',
+    answers:[
+      {text:'Increasing dependence on global commodity chains to lower consumer prices', correct:false},
+      {text:'Reducing food miles and supporting local economies and environmental sustainability', correct:true},
+      {text:'Replacing subsistence farming entirely with commercial monoculture', correct:false},
+      {text:'Maximizing government subsidies for large agricultural operations', correct:false}
+    ],
+    explain:'The local food movement prioritizes shortening food miles, supporting local farmers, and rebuilding community connections to food systems outside global industrial supply chains.'
+  },
+  {
+    id:'m13', emoji:'🫙', name:'Wildcraft Hot Sauce', scene:'scene-localhills', tag:'Value-Added Crops', cost:6, profit:8,
+    desc:'Fermented pepper sauce from field-run peppers — worth 5× the raw crop price.',
+    question:'A "value-added specialty crop" strategy MOST directly allows small farmers to:',
+    answers:[
+      {text:'Access global commodity markets without processing their raw goods', correct:false},
+      {text:'Capture more revenue by processing or transforming raw crops before sale', correct:true},
+      {text:'Qualify for government subsidies reserved for large commercial operations', correct:false},
+      {text:'Convert to organic production without certification costs', correct:false}
+    ],
+    explain:'Value-added crops earn greater revenue by transforming raw farm products through processing, packaging, or branding — helping small farms compete by escaping commodity price floors.'
+  },
+
+  // ── Sub-topic C: Feeding a Global Population ──
+  {
+    id:'m14', emoji:'🥗', name:'Food Equity Report', scene:'scene-rooftop', tag:'Food Insecurity', cost:5, profit:7,
+    desc:'Community research mapping food access gaps in low-income neighborhoods.',
+    question:'A "food desert" is BEST characterized as:',
+    answers:[
+      {text:'An arid region rendered unproductive by desertification', correct:false},
+      {text:'A low-income area where residents lack access to fresh, nutritious, affordable food', correct:true},
+      {text:'Any country that depends primarily on food imports', correct:false},
+      {text:'A drought-affected region experiencing temporary food shortages', correct:false}
+    ],
+    explain:'Food deserts: Low-income urban or rural areas where supermarkets are absent or distant, fast food is cheaper and more accessible — contributing to poor nutrition and health disparities.'
+  },
+  {
+    id:'m15', emoji:'🏘️', name:'Suburban Farm Stand', scene:'scene-suburb', tag:'Suburbanization', cost:7, profit:9,
+    desc:'A farm stand on the edge of a former cornfield — the rest is now a subdivision.',
+    question:'Suburbanization threatens global food production MOST directly by:',
+    answers:[
+      {text:'Increasing demand for GMO crops in urban areas', correct:false},
+      {text:'Converting fertile agricultural land near cities into permanent development', correct:true},
+      {text:'Reducing the number of CSA programs available', correct:false},
+      {text:'Encouraging dietary shifts away from locally grown produce', correct:false}
+    ],
+    explain:'Suburbanization permanently removes some of the most productive farmland — often in fertile valleys near cities — from agricultural use. This conversion is essentially irreversible.'
+  },
+  {
+    id:'m16', emoji:'🌧️', name:'Frost-Damaged Apples', scene:'scene-farmfield', tag:'Adverse Weather', cost:4, profit:6,
+    desc:'Bruised apples — a late frost wiped out 40% of the orchard\'s crop this spring.',
+    question:'Adverse weather contributes to global food insecurity primarily by:',
+    answers:[
+      {text:'Permanently expanding the size of food deserts in urban areas', correct:false},
+      {text:'Disrupting yields and supply chains, creating shortages that hit vulnerable populations hardest', correct:true},
+      {text:'Forcing farmers to adopt GMO crops, reducing biodiversity', correct:false},
+      {text:'Eliminating economic benefits of CSA programs', correct:false}
+    ],
+    explain:'Droughts, floods, and frosts disrupt harvests and break supply chains. Climate-related crop failures hit poorer countries and low-income households hardest — they have the least savings to fall back on when food prices spike.'
+  },
+  {
+    id:'m17', emoji:'🚛', name:'Distribution Chain Tomatoes', scene:'scene-industrial', tag:'Distribution Systems', cost:6, profit:8,
+    desc:'Tomatoes picked green and gas-ripened in transit — they traveled 1,500 miles to reach this stall.',
+    question:'Which BEST describes a problem with global food distribution systems?',
+    answers:[
+      {text:'Local food is distributed too efficiently, reducing need for global supply chains', correct:false},
+      {text:'Food spoils in transit and distribution networks often bypass food-insecure communities', correct:true},
+      {text:'Distribution systems exclusively favor organic and fair trade producers', correct:false},
+      {text:'International distribution has eliminated food deserts in most developed countries', correct:false}
+    ],
+    explain:'Even where food is abundant, inadequate infrastructure and market structures can leave vulnerable communities without access — distribution failures are as important as production failures.'
+  },
+
+  // ── Sub-topic D: Economic Effects ──
+  {
+    id:'m18', emoji:'🏭', name:'Factory Cheese Block', scene:'scene-industrial', tag:'Economies of Scale', cost:7, profit:9,
+    desc:'Factory-processed cheese from a plant handling milk from 500 farms across three states.',
+    question:'In food production, "economies of scale" MOST directly refer to:',
+    answers:[
+      {text:'Government subsidies available to small organic farms', correct:false},
+      {text:'Cost advantages large producers gain by spreading fixed costs over higher volumes', correct:true},
+      {text:'Environmental benefits of reducing food miles in local supply chains', correct:false},
+      {text:'CSA\'s model of sharing seasonal harvest risks with consumers', correct:false}
+    ],
+    explain:'Economies of scale means the bigger you are, the cheaper each unit costs to produce — large food companies spread their costs across millions of units, making it nearly impossible for small farms to compete on price alone.'
+  },
+  {
+    id:'m19', emoji:'📋', name:'Farm Subsidy Pamphlet', scene:'scene-economic', tag:'Government Policy', cost:6, profit:8,
+    desc:'A guide explaining how federal crop insurance and commodity price supports work.',
+    question:'Government agricultural subsidies MOST directly influence food production by:',
+    answers:[
+      {text:'Requiring all farmers to adopt GMO seed varieties', correct:false},
+      {text:'Shaping which crops are grown by making certain commodities more financially viable', correct:true},
+      {text:'Eliminating competition between domestic and international producers', correct:false},
+      {text:'Mandating that processors locate near suburban residential areas', correct:false}
+    ],
+    explain:'Government policies — including subsidies and price supports — directly shape what farmers grow. U.S. corn and soy subsidies, for example, have driven the dominance of those crops nationally.'
+  },
+  {
+    id:'m20', emoji:'🏪', name:'Cold-Storage Strawberries', scene:'scene-farmfield', tag:'Processing & Markets', cost:8, profit:10,
+    desc:'Strawberries flash-frozen at a regional processing facility before reaching market.',
+    question:'The location of food-processing facilities MOST directly affects food production by:',
+    answers:[
+      {text:'Determining which countries qualify for fair trade certification', correct:false},
+      {text:'Influencing where farmers produce crops based on proximity to processing infrastructure', correct:true},
+      {text:'Setting prices consumers pay for organic produce at farmers markets', correct:false},
+      {text:'Establishing which GMO varieties are approved for commercial sale', correct:false}
+    ],
+    explain:'Farmers produce where crops can be efficiently processed and moved to market — infrastructure geography directly shapes agricultural geography and which regions specialize in which commodities.'
+  }
+];
+
+/* ══════════════════════════════════════════════════════
+   CONSEQUENCES (Part 2 only — three 5.10 categories)
+══════════════════════════════════════════════════════ */
+const CONSEQUENCES_ENV = [
+  {emoji:'🌊',name:'Fertilizer Runoff Lawsuit!',scene:'scene-algae',penalty:8,
+   desc:'Nitrogen-rich runoff from a nearby farm has polluted the creek behind the market — you\'re fined for sourcing from that farm.',
+   concept:'Pollution: When excess fertilizer washes into rivers and lakes, it causes algae to grow out of control. The algae uses up all the oxygen in the water, creating dead zones where fish and other aquatic life cannot survive.'},
+  {emoji:'🏜️',name:'Soil Salinization Crisis!',scene:'scene-dryland',penalty:10,
+   desc:'Years of heavy irrigation left white salt crusts across your supplier\'s fields — yields are collapsing.',
+   concept:'Soil Salinization: When farmers irrigate dry land, water evaporates and leaves dissolved salt behind. Over time, the salt builds up until nothing will grow — a major problem in Central Asia and California\'s Central Valley.'},
+  {emoji:'🌫️',name:'Desertification Warning!',scene:'scene-dryland',penalty:9,
+   desc:'Bordering land has been overgrazed into bare, cracked earth — a dust storm is rolling in.',
+   concept:'Desertification: Overgrazing removes the plants holding soil in place. Wind then erodes the exposed topsoil and the land gradually turns to desert — most visible today in the Sahel region of Africa.'},
+  {emoji:'🐝',name:'Pesticide Drift Fine!',scene:'scene-organic',penalty:7,
+   desc:'Chemical spray from a neighboring monoculture drifted onto organic stalls — your license is suspended.',
+   concept:'Pollution: Pesticides don\'t just kill target pests — they drift onto neighboring farms, harm bees and other pollinators, and contaminate soil and water. One-third of the world\'s food depends on pollinators like bees.'},
+  {emoji:'🌡️',name:'Land Cover Change Penalty!',scene:'scene-sunrise',penalty:7,
+   desc:'Satellite imagery shows your supplier converted native grassland to cropland — a carbon offset fine is levied.',
+   concept:'Land Cover Change: When forests and grasslands are converted to farmland, stored carbon is released into the atmosphere, natural water cycles are disrupted, and wildlife loses habitat — changes that are very difficult to reverse.'}
+];
+const CONSEQUENCES_LANDSCAPE = [
+  {emoji:'🔥',name:'Slash-and-Burn Smoke Alert!',scene:'scene-fire',penalty:9,
+   desc:'A supplier used slash-and-burn clearing upwind — ash contaminated this week\'s harvest.',
+   concept:'Slash and Burn: Farmers cut and burn vegetation to clear land and fertilize soil with ash. It works at small scales with enough rest time between uses — but when too many people need land, forests are burned faster than they can grow back.'},
+  {emoji:'💧',name:'Irrigation Canal Breach!',scene:'scene-water',penalty:8,
+   desc:'An unlined irrigation canal flooded your neighbor\'s stall — the market association is billing you for damages.',
+   concept:'Irrigation: Bringing water to dry land through canals and sprinklers transforms landscapes and expands farming into arid regions. But over-irrigation can waterlog soils, drain underground water reserves, and leave behind salt deposits.'},
+  {emoji:'🌲',name:'Deforestation Audit!',scene:'scene-fire',penalty:8,
+   desc:'An NGO traced your coffee supplier\'s land to recently cleared rainforest — buyers are boycotting.',
+   concept:'Deforestation: Clearing forests for farmland is the world\'s leading cause of forest loss. It permanently eliminates animal habitat, releases stored carbon, and can even reduce local rainfall by removing the trees that cycle moisture into the air.'},
+  {emoji:'🦆',name:'Wetland Drain Violation!',scene:'scene-water',penalty:9,
+   desc:'The farm supplying your rice drained a protected wetland for paddy fields — regulators shut them down.',
+   concept:'Draining Wetlands: Wetlands are drained to create farmland, but they do critical work: they filter pollution out of water, soak up floodwater like a sponge, store carbon, and provide habitat for birds, fish, and other wildlife.'},
+  {emoji:'🐄',name:'Pastoral Overgrazing!',scene:'scene-savanna',penalty:7,
+   desc:'Seasonal herders moved large flocks through the market region — pastureland is stripped bare.',
+   concept:'Pastoral Nomadism: Moving herds seasonally across large territories works well when herd sizes are small. But when herds grow too large or migration routes are blocked, the land gets stripped of vegetation faster than it can recover.'}
+];
+const CONSEQUENCES_SOCIETAL = [
+  {emoji:'🍔',name:'Diet Shift Backlash!',scene:'scene-village',penalty:6,
+   desc:'Rising incomes in your supplier\'s country shifted demand to meat — grain prices spiked and your costs rose.',
+   concept:'Changing Diets: As countries become wealthier, people shift from simple plant-based diets to more meat and processed food. Since raising animals requires far more land, water, and grain than growing crops directly, this shift puts major pressure on agricultural systems worldwide.'},
+  {emoji:'👩‍🌾',name:'Women\'s Labor Audit!',scene:'scene-farmfield',penalty:7,
+   desc:'A labor audit found your supplier underpaid female farmworkers who perform the majority of harvest work.',
+   concept:'Role of Women: In many poorer countries, women do the majority of daily farm work — but are often denied land ownership, loans, and decision-making power. Closing this gap consistently improves food security for entire communities.'},
+  {emoji:'📉',name:'Commodity Price Crash!',scene:'scene-economic',penalty:8,
+   desc:'Global overproduction of wheat collapsed prices — your grain supplier can no longer afford to sell at market.',
+   concept:'Market Economics: Commercial farmers sell into global markets where prices are set by worldwide supply and demand. A single bumper crop worldwide can crash prices below what it cost a farmer to grow — and there\'s nothing they can do about it.'},
+  {emoji:'🏭',name:'Agribusiness Buyout!',scene:'scene-industrial',penalty:9,
+   desc:'A multinational corporation bought out the local cooperative supplying your stall — prices doubled overnight.',
+   concept:'Agribusiness Consolidation: When a small number of giant corporations control seeds, chemicals, and food processing, small farms lose their independence. Prices go up, competition disappears, and rural communities lose the power to shape their own food systems.'}
+];
+
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+let p1Money = 0;
+let p2Money = 0;
+let p1Correct = 0, p1Wrong = 0;
+let p2Correct = 0, p2Wrong = 0;
+let conseqCount = 0, conseqEnv = 0, conseqLand = 0, conseqSoc = 0;
+let p1Remaining = [];
+let p2Remaining = [];
+let pendingStall = null;
+let pendingConsequence = null;
+let currentPhase = 1; // 1 or 2
+
+/* ══════════════════════════════════════════════════════
+   SCREEN HELPERS
+══════════════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function setPhase(n) {
+  currentPhase = n;
+  document.body.className = `phase-${n}`;
+  const badge = document.getElementById('phase-badge');
+  badge.textContent = n === 1 ? '🗺️ The Field Guide' : '🏪 The Farmers Market';
+}
+
+/* ══════════════════════════════════════════════════════
+   PART 1 — LEARNING WALK
+══════════════════════════════════════════════════════ */
+function startPart1() {
+  p1Money = 0; p1Correct = 0; p1Wrong = 0;
+  p1Remaining = [...KNOWLEDGE_STALLS];
+  setPhase(1);
+  showScreen('part1-screen');
+  updateP1Wallet();
+  renderP1Grid();
+}
+
+function updateP1Wallet(delta) {
+  const el = document.getElementById('p1-wallet');
+  el.textContent = `$${p1Money}`;
+  if (delta !== undefined) flashWallet(el, delta);
+  const done = KNOWLEDGE_STALLS.length - p1Remaining.length;
+  document.getElementById('p1-progress').style.width = `${(done/KNOWLEDGE_STALLS.length)*100}%`;
+  document.getElementById('p1-stats').textContent = `${done} of ${KNOWLEDGE_STALLS.length} stalls visited`;
+}
+
+function renderP1Grid() {
+  const grid = document.getElementById('p1-grid');
+  grid.innerHTML = KNOWLEDGE_STALLS.map(s => {
+    const done = !p1Remaining.find(r => r.id === s.id);
+    return `<div class="stall ${done?'done':''}" onclick="${done?'':'openKnowledgeStall(\''+s.id+'\')'}">
+      <span class="stall-emoji">${s.emoji}</span>
+      <div class="stall-name">${s.name}</div>
+      <div class="stall-value">${done ? '✓ Learned' : '+$4–$8'}</div>
+      <span class="stall-tag">${s.tag}</span>
+    </div>`;
+  }).join('');
+}
+
+function openKnowledgeStall(id) {
+  const stall = p1Remaining.find(s => s.id === id);
+  if (!stall) return;
+  pendingStall = stall;
+
+  // Build modal
+  setModalTag('📖 Field Guide Entry', 'purchase');
+  document.getElementById('modal-emoji').textContent = stall.emoji;
+  document.getElementById('modal-title').textContent = stall.name;
+  document.getElementById('modal-desc').textContent = '';
+
+  // Concept card
+  document.getElementById('modal-extra').innerHTML = `
+    <div class="concept-card">
+      <div class="concept-label">📚 Read &amp; Remember</div>
+      <p>${stall.concept}</p>
+    </div>`;
+
+  // Question
+  document.getElementById('question-box').style.display = 'block';
+  document.getElementById('modal-question').textContent = stall.question;
+
+  const shuffled = [...stall.answers].sort(() => Math.random() - 0.5);
+  // Store shuffled answers on pendingStall so selectP1Answer can look them up safely
+  pendingStall._shuffled = shuffled;
+  document.getElementById('answer-options').innerHTML = shuffled.map((a,i) =>
+    `<button class="answer-btn" id="pa-${i}" onclick="selectP1Answer(${i})">${a.text}</button>`
+  ).join('');
+
+  document.getElementById('feedback-box').className = 'feedback-box';
+  document.getElementById('feedback-box').innerHTML = '';
+  hideContinue();
+  showModal(stall.scene);
+}
+
+function selectP1Answer(idx) {
+  const answer = pendingStall._shuffled[idx];
+  const correct = answer.correct;
+  const explain = pendingStall.explain;
+  disableAnswers();
+  const earned = correct ? 8 : 4;
+  p1Money += earned;
+  if (correct) { p1Correct++; } else { p1Wrong++; }
+
+  const fb = document.getElementById('feedback-box');
+  if (correct) {
+    document.querySelectorAll('.answer-btn')[idx].classList.add('correct');
+    fb.className = 'feedback-box show good';
+    fb.innerHTML = `<strong>✅ Correct! +$8</strong><br>${explain}`;
+  } else {
+    document.querySelectorAll('.answer-btn')[idx].classList.add('wrong');
+    fb.className = 'feedback-box show bad';
+    fb.innerHTML = `<strong>❌ Incorrect — you still earn $4 for visiting.</strong><br>${explain}`;
+  }
+
+  updateP1Wallet(earned);
+  p1Remaining = p1Remaining.filter(s => s.id !== pendingStall.id);
+  renderP1Grid();
+  saveGame();
+
+  showContinue('Continue the Guide →', () => {
+    hideModal();
+    if (p1Remaining.length === 0) setTimeout(showTransition, 300);
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   TRANSITION
+══════════════════════════════════════════════════════ */
+function showTransition() {
+  setPhase(2);
+  document.getElementById('transition-earned').textContent = `$${p1Money}`;
+  const pct = Math.round((p1Correct / KNOWLEDGE_STALLS.length) * 100);
+  document.getElementById('transition-sub').textContent =
+    `earned in the Field Guide (${p1Correct}/${KNOWLEDGE_STALLS.length} correct — ${pct}%) · this is your Farmers Market budget`;
+  showScreen('transition-screen');
+  saveGame();
+}
+
+/* ══════════════════════════════════════════════════════
+   PART 2 — MARKET CHALLENGE
+══════════════════════════════════════════════════════ */
+function startPart2() {
+  p2Money = p1Money;
+  p2Correct = 0; p2Wrong = 0;
+  conseqCount = 0; conseqEnv = 0; conseqLand = 0; conseqSoc = 0;
+  p2Remaining = [...MARKET_STALLS];
+  showScreen('part2-screen');
+  updateP2Wallet();
+  renderP2Grid();
+  saveGame();
+}
+
+function updateP2Wallet(delta) {
+  const el = document.getElementById('p2-wallet');
+  el.textContent = `$${p2Money}`;
+  if (delta !== undefined) flashWallet(el, delta);
+  const done = MARKET_STALLS.length - p2Remaining.length;
+  document.getElementById('p2-progress').style.width = `${(done/MARKET_STALLS.length)*100}%`;
+  document.getElementById('p2-stats').textContent = `${done} of ${MARKET_STALLS.length} stalls attempted`;
+}
+
+function renderP2Grid() {
+  const grid = document.getElementById('p2-grid');
+  grid.innerHTML = MARKET_STALLS.map(s => {
+    const done = !p2Remaining.find(r => r.id === s.id);
+    const cantAfford = !done && p2Money < s.cost;
+    return `<div class="stall ${done?'done':cantAfford?'locked':''}" 
+               onclick="${done||cantAfford?'':'openMarketStall(\''+s.id+'\')'}">
+      <span class="stall-emoji">${s.emoji}</span>
+      <div class="stall-name">${s.name}</div>
+      <div class="stall-value">${done ? '✓ Done' : cantAfford ? '🔒 Can\'t afford' : `Profit: +$${s.profit}`}</div>
+      <div class="stall-cost">${done ? '' : cantAfford ? `Need $${s.cost}` : `Cost: $${s.cost}`}</div>
+      <span class="stall-tag">${s.tag}</span>
+    </div>`;
+  }).join('');
+}
+
+function openMarketStall(id) {
+  const stall = p2Remaining.find(s => s.id === id);
+  if (!stall || p2Money < stall.cost) return;
+  pendingStall = stall;
+  pendingConsequence = null;
+
+  // 38% chance of consequence first
+  if (Math.random() < 0.38) {
+    const pools = [CONSEQUENCES_ENV, CONSEQUENCES_LANDSCAPE, CONSEQUENCES_SOCIETAL];
+    const pool = pools[Math.floor(Math.random() * 3)];
+    pendingConsequence = pool[Math.floor(Math.random() * pool.length)];
+    showConsequenceModal();
+  } else {
+    showMarketModal(stall);
+  }
+}
+
+function showConsequenceModal() {
+  const c = pendingConsequence;
+  const isEnv = CONSEQUENCES_ENV.includes(c);
+  const isLand = CONSEQUENCES_LANDSCAPE.includes(c);
+  const catLabel = isEnv ? '🌍 Environmental'
+                 : isLand ? '🗺️ Landscape'
+                 : '👥 Societal';
+
+  setModalTag(`⚠️ ${catLabel} Consequence`, 'consequence');
+  document.getElementById('modal-emoji').textContent = c.emoji;
+  document.getElementById('modal-title').textContent = c.name;
+  document.getElementById('modal-desc').textContent = c.desc;
+  document.getElementById('modal-extra').innerHTML = `
+    <div class="wager-banner consequence">
+      <div class="wager-amount">-$${c.penalty}</div>
+      <p>deducted from your wallet before you shop</p>
+    </div>`;
+  document.getElementById('question-box').style.display = 'none';
+  document.getElementById('answer-options').innerHTML = '';
+  const fb = document.getElementById('feedback-box');
+  fb.className = 'feedback-box show neutral';
+  fb.innerHTML = `<strong>📚 Geographic Concept:</strong><br>${c.concept}`;
+
+  showContinue('Continue to Stall →', () => {
+    p2Money = Math.max(0, p2Money - c.penalty);
+    conseqCount++;
+    if (isEnv) conseqEnv++; else if (isLand) conseqLand++; else conseqSoc++;
+    updateP2Wallet(-c.penalty);
+    renderP2Grid();
+    saveGame();
+    hideModal();
+    setTimeout(() => showMarketModal(pendingStall), 160);
+  });
+  showModal(c.scene || 'scene-consequence');
+}
+
+function showMarketModal(stall) {
+  setModalTag('🛒 Market Stall', 'purchase');
+  document.getElementById('modal-emoji').textContent = stall.emoji;
+  document.getElementById('modal-title').textContent = stall.name;
+  document.getElementById('modal-desc').textContent = stall.desc;
+  document.getElementById('modal-extra').innerHTML = `
+    <div class="wager-banner cost">
+      <div class="wager-amount">-$${stall.cost} to enter</div>
+      <p>Correct → get $${stall.cost} back + $${stall.profit} profit &nbsp;|&nbsp; Wrong → lose $${stall.cost}</p>
+    </div>`;
+  document.getElementById('question-box').style.display = 'block';
+  document.getElementById('modal-question').textContent = stall.question;
+
+  const shuffled = [...stall.answers].sort(() => Math.random() - 0.5);
+  // Store on pendingStall so selectP2Answer can look them up safely — no string escaping needed
+  pendingStall._shuffled = shuffled;
+  document.getElementById('answer-options').innerHTML = shuffled.map((a,i) =>
+    `<button class="answer-btn" id="ma-${i}" onclick="selectP2Answer(${i})">${a.text}</button>`
+  ).join('');
+
+  document.getElementById('feedback-box').className = 'feedback-box';
+  document.getElementById('feedback-box').innerHTML = '';
+  hideContinue();
+  showModal(stall.scene);
+}
+
+function selectP2Answer(idx) {
+  const answer = pendingStall._shuffled[idx];
+  const correct = answer.correct;
+  const explain = pendingStall.explain;
+  const cost = pendingStall.cost;
+  const profit = pendingStall.profit;
+
+  disableAnswers();
+  const fb = document.getElementById('feedback-box');
+
+  if (correct) {
+    document.querySelectorAll('.answer-btn')[idx].classList.add('correct');
+    p2Money += profit;
+    p2Correct++;
+    fb.className = 'feedback-box show good';
+    fb.innerHTML = `<strong>✅ Correct! +$${profit} profit</strong><br>${explain}`;
+    updateP2Wallet(profit);
+  } else {
+    document.querySelectorAll('.answer-btn')[idx].classList.add('wrong');
+    p2Money -= cost;
+    p2Wrong++;
+    fb.className = 'feedback-box show bad';
+    fb.innerHTML = `<strong>❌ Incorrect — $${cost} entry fee lost.</strong><br>${explain}`;
+    updateP2Wallet(-cost);
+  }
+
+  p2Remaining = p2Remaining.filter(s => s.id !== pendingStall.id);
+  renderP2Grid();
+  saveGame();
+
+  const allDone = p2Remaining.length === 0;
+  const canAffordAny = p2Remaining.some(s => p2Money >= s.cost);
+
+  if (allDone) {
+    showContinue('See Final Results →', () => { hideModal(); setTimeout(endGame, 300); });
+    hideBoardBtn();
+  } else if (!canAffordAny) {
+    showContinue('No more affordable stalls → Results', () => { hideModal(); setTimeout(endGame, 300); });
+    hideBoardBtn();
+  } else {
+    showContinue('Next Stall →', hideModal);
+    showBoardBtn();
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   END GAME
+══════════════════════════════════════════════════════ */
+function endGame() {
+  setPhase(2);
+  showScreen('end-screen');
+  saveGame(); // save completed state so resume shows "game complete"
+
+  let grade, emoji;
+  // Part 1 max = 12 × $8 = $96. Part 2 profits add on top.
+  // Thresholds reflect ending balance after both parts.
+  if      (p2Money >= 130) { grade='Market Master! 🌟'; emoji='🏆'; }
+  else if (p2Money >= 90)  { grade='Savvy Shopper! 🥬'; emoji='🥇'; }
+  else if (p2Money >= 55)  { grade='Market Regular 🛒'; emoji='🥈'; }
+  else if (p2Money >= 20)  { grade='Learning Investor 📚'; emoji='🥉'; }
+  else                     { grade='Back to the Books! 🌱'; emoji='🌱'; }
+
+  document.getElementById('end-emoji').textContent = emoji;
+  document.getElementById('end-grade').textContent = grade;
+  document.getElementById('end-balance').textContent = `Final Balance: $${p2Money}`;
+
+  const rows = [
+    ['🗺️ The Field Guide',''],
+    [`&nbsp;&nbsp;Correct`, `${p1Correct} / ${KNOWLEDGE_STALLS.length}`],
+    [`&nbsp;&nbsp;Earnings`, `$${p1Money}`],
+    ['🏪 The Farmers Market',''],
+    [`&nbsp;&nbsp;Correct`, `${p2Correct} / ${MARKET_STALLS.length}`],
+    [`&nbsp;&nbsp;Wrong (fee lost)`, `${p2Wrong}`],
+    [`&nbsp;&nbsp;Consequences hit`, `${conseqCount}`],
+    ...(conseqCount > 0 ? [
+      [`&nbsp;&nbsp;&nbsp;&nbsp;🌍 Environmental`,`${conseqEnv}`],
+      [`&nbsp;&nbsp;&nbsp;&nbsp;🗺️ Landscape`,`${conseqLand}`],
+      [`&nbsp;&nbsp;&nbsp;&nbsp;👥 Societal`,`${conseqSoc}`],
+    ] : []),
+    ['💰 Final Balance', `$${p2Money}`],
+  ];
+
+  document.getElementById('score-table').innerHTML = rows.map(([l,v]) =>
+    `<div class="score-row ${l.startsWith('&')&&l.includes('&nbsp;&nbsp;&nbsp;')?'indent':''}">
+      <span class="sr-label">${l}</span>
+      <span class="sr-val">${v}</span>
+    </div>`
+  ).join('');
+}
+
+function restartGame() {
+  clearSave();
+  setPhase(1);
+  document.getElementById('resume-card').style.display = 'none';
+  document.getElementById('new-game-card').style.display = 'block';
+  showScreen('setup-screen');
+}
+
+/* ══════════════════════════════════════════════════════
+   SAVE / LOAD / RESUME
+══════════════════════════════════════════════════════ */
+const SAVE_KEY = 'harvest_market_save';
+
+function saveGame() {
+  const state = {
+    currentPhase,
+    p1Money, p1Correct, p1Wrong,
+    p2Money, p2Correct, p2Wrong,
+    conseqCount, conseqEnv, conseqLand, conseqSoc,
+    p1RemainingIds: p1Remaining.map(s => s.id),
+    p2RemainingIds: p2Remaining.map(s => s.id),
+    screen: document.querySelector('.screen.active')?.id || 'setup-screen',
+    savedAt: Date.now(),
+  };
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    const ind = document.getElementById('save-indicator');
+    if (ind) {
+      ind.style.display = 'inline-block';
+      ind.textContent = '💾 Saved';
+      clearTimeout(ind._t);
+      ind._t = setTimeout(() => { ind.textContent = '💾 Auto-saved'; }, 1200);
+    }
+  } catch(e) { /* storage unavailable */ }
+}
+
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function clearSave() {
+  try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+  const ind = document.getElementById('save-indicator');
+  if (ind) ind.style.display = 'none';
+}
+
+function checkForSave() {
+  const save = loadSave();
+  if (!save) return;
+
+  // Build a human-readable summary
+  const phase = save.currentPhase === 1 ? '🗺️ The Field Guide' : '🏪 The Farmers Market';
+  const p1Done = KNOWLEDGE_STALLS.length - save.p1RemainingIds.length;
+  const p2Done = MARKET_STALLS.length - save.p2RemainingIds.length;
+  const savedDate = new Date(save.savedAt);
+  const timeStr = savedDate.toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+
+  let summary = `Last saved: ${timeStr}<br>`;
+  if (save.currentPhase === 1) {
+    summary += `<strong>${phase}</strong> — ${p1Done} of ${KNOWLEDGE_STALLS.length} stalls completed · Earned so far: <strong>$${save.p1Money}</strong>`;
+  } else if (save.screen === 'end-screen') {
+    summary += `Game complete! Final balance: <strong>$${save.p2Money}</strong>`;
+  } else if (save.screen === 'transition-screen') {
+    summary += `<strong>Field Guide complete</strong> · Budget earned: <strong>$${save.p1Money}</strong> · Ready to enter the Farmers Market`;
+  } else {
+    summary += `<strong>${phase}</strong> — ${p2Done} of ${MARKET_STALLS.length} stalls attempted · Wallet: <strong>$${save.p2Money}</strong>`;
+  }
+
+  document.getElementById('resume-summary').innerHTML = summary;
+  document.getElementById('resume-card').style.display = 'block';
+  document.getElementById('new-game-card').style.display = 'none';
+}
+
+function resumeGame() {
+  const save = loadSave();
+  if (!save) return;
+
+  // Restore all state
+  currentPhase  = save.currentPhase;
+  p1Money       = save.p1Money;
+  p1Correct     = save.p1Correct;
+  p1Wrong       = save.p1Wrong;
+  p2Money       = save.p2Money;
+  p2Correct     = save.p2Correct;
+  p2Wrong       = save.p2Wrong;
+  conseqCount   = save.conseqCount;
+  conseqEnv     = save.conseqEnv;
+  conseqLand    = save.conseqLand;
+  conseqSoc     = save.conseqSoc;
+  p1Remaining   = KNOWLEDGE_STALLS.filter(s => save.p1RemainingIds.includes(s.id));
+  p2Remaining   = MARKET_STALLS.filter(s => save.p2RemainingIds.includes(s.id));
+
+  setPhase(currentPhase);
+  document.getElementById('save-indicator').style.display = 'inline-block';
+
+  // Restore to the right screen
+  const screen = save.screen;
+  if (screen === 'part1-screen') {
+    showScreen('part1-screen');
+    updateP1Wallet();
+    renderP1Grid();
+  } else if (screen === 'transition-screen') {
+    showTransition();
+  } else if (screen === 'part2-screen') {
+    showScreen('part2-screen');
+    updateP2Wallet();
+    renderP2Grid();
+  } else if (screen === 'end-screen') {
+    endGame();
+  } else {
+    startPart1();
+  }
+}
+
+function confirmFresh() {
+  if (confirm('Start a brand new game? Your saved progress will be erased.')) {
+    clearSave();
+    document.getElementById('resume-card').style.display = 'none';
+    document.getElementById('new-game-card').style.display = 'block';
+  }
+}
+
+// Check for a save when the page loads
+window.addEventListener('load', checkForSave);
+
+/* ══════════════════════════════════════════════════════
+   MODAL HELPERS
+══════════════════════════════════════════════════════ */
+function showModal(scene) {
+  const ov = document.getElementById('modal-overlay');
+  // Remove all previous scene classes
+  ov.className = 'modal-overlay';
+  if (scene) ov.classList.add(scene);
+  ov.classList.add('visible');
+  ov.scrollTop = 0;
+}
+function hideModal() {
+  document.getElementById('modal-overlay').classList.remove('visible');
+}
+function setModalTag(text, cls) {
+  const el = document.getElementById('modal-tag');
+  el.textContent = text;
+  el.className = `modal-phase-tag ${cls}`;
+}
+function showContinue(label, fn) {
+  const btn = document.getElementById('btn-continue');
+  btn.style.display = 'inline-block';
+  btn.textContent = label;
+  btn.onclick = fn;
+}
+function hideContinue() {
+  document.getElementById('btn-continue').style.display = 'none';
+  hideBoardBtn();
+}
+function showBoardBtn() {
+  document.getElementById('btn-board').style.display = 'inline-block';
+}
+function hideBoardBtn() {
+  document.getElementById('btn-board').style.display = 'none';
+}
+function disableAnswers() {
+  document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+}
+function flashWallet(el, delta) {
+  el.classList.remove('flash-up','flash-down');
+  void el.offsetWidth;
+  el.classList.add(delta > 0 ? 'flash-up' : 'flash-down');
+  setTimeout(() => el.classList.remove('flash-up','flash-down'), 700);
+}
+function esc(s) { return s.replace(/'/g,"\\'").replace(/`/g,"'"); }
+</script>
+</body>
+</html>
